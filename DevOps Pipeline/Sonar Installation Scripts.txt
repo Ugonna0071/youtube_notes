@@ -1,0 +1,129 @@
+SonarQube is an automated code review tool which helps to review code quality. SonarQube smells the code and checks it for bugs.
+ To spin up an instance, use a minimum of T2 micro and configure storage to 16gb. Also edit security inbound rule to enable port 9000. This port is the default port for Sonar
+ Update package reposirory and upgrade packages
+        $ sudo apt update
+        $ sudo apt upgrade
+Ensure you are running a 64bit server because sonar cannot run efficiently on 32bit. Run below command
+        $ uname -m
+Install the latest version of java available. SonarQube requires minimum of Java 11 to run
+
+        $ sudo apt-get install openjdk-11-jdk -y
+        $ sudo apt-get install default-jdk -y
+
+----------------------------------------------------------------------------------------
+Install postgreSQL
+        $ sudo apt install postgresql postgresql-contrib
+Log in to PostgreSQL.
+        $ sudo -Hiu postgres
+Create a Database User
+        $ createuser sonar
+Create a Database and give access to sonar user
+        $ createdb -O sonar sonarqubedb
+Log in to PostgreSQL
+        $ psql
+Set a password for the sonar user. Use a strong password in place of my_strong_password.
+
+       $ ALTER USER sonar WITH ENCRYPTED password 'my_sonar_password';
+
+Grant ALL privileges on Database sonarqube to sonar;
+       $ GRANT ALL PRIVILEGES ON DATABASE sonarqube to sonar;
+
+Exit PostgreSQL.
+       $ \q
+Exit to go back into linux root user environment
+       $ exit
+SonarQube requires Elastic search to run. This is used for Logs- Audit logs. This requires the dependency  package SECCOMP filter
+Check if SECCOMP is available. By default it comes bundled with Ubuntu
+       $ grep SECCOMP /boot/config-$(uname -r)
+SonarQube also requires Executive Report Font. This needs to be configured
+       $ apt install fontconfig-config libfreetype6
+All the depedencies have been installed. Next step is to Download and Install SonarQube. Make sure you are downloading the latest & stable version
+       $ wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-9.6.1.59531.zip
+Install the zip to unzip the file (9.6.1.59531.zip)
+       $ apt install zip
+Unzip the downloaded file into opt directory
+       $ unzip sonarqube-9.6.1.59531.zip -d /opt/
+Remane the file (This is optional) the parenthesis in the command below shows portion to be removed
+       $ mv /opt/sonarqube{-9.6.1.59531,}
+Create a Sonarqube Linux user
+       $ useradd -M -d /opt/sonarqube/ -r -s /bin/bash sonarqube
+Give Ownership to the user
+       $ chown -R sonarqube: /opt/sonarqube/
+Configure Sonarqube
+       $ vi /opt/sonarqube/conf/sonar.properties 
+Edit the SonarQube configuration file.
+Scroll to find the following lines:
+
+#sonar.jdbc.username=
+#sonar.jdbc.password=
+#sonar.jdbc.username= 
+#sonar.jdbc.password= 
+
+Uncomment the lines, and add the database user and password you created earlier. You can also copy and paste and add below uncommented code line
+
+sonar.jdbc.username=sonar
+sonar.jdbc.password=my_sonar_password
+sonar.jdbc.password=admin
+
+Edit Database connection string. by adding the sonar.jdbc.url.
+Scroll to find "postgres 9.3 or Greater", uncomment 3rd line and edit as 
+
+sonar.jdbc.url=jdbc:postgresql://localhost:5432/sonarqube
+
+Save and exit the file.
+
+Remember it is not a good practice to use root to run commands. Use the sonarqube user and grant them all persmissions
+Edit sudoers file 
+        $  vi /etc/sudoers
+Scroll down to user privileges and add your user just below root user
+sonarqube ALL=(ALL) NOPASSWD: ALL
+
+save and exit
+	$ \wq!
+Create a password in Linux for user
+        $ passwd sonarqube
+Grant user all permission and ownership in opt directory
+        $ chmod 777 -R /opt/sonarqube/
+        $ chown sonarqube: -R /opt/sonarqube/
+You can now switch to sonarqube user
+        $ su - sonarqube
+Start SonarQube
+        $ sudo /opt/sonarqube/bin/linux-x86-64/sonar.sh start
+Create a system service to start and/or stop Sonarqube by going into the systemd in etc directory. Copy entire block of code
+ cat > /etc/systemd/system/sonarqube.service << 'EOL'
+ [Unit]
+ Description=SonarQube service
+ After=syslog.target network.target
+ [Service]
+ Type=simple
+ User=sonarqube
+ Group=sonarqube
+ PermissionsStartOnly=true
+ ExecStart=/bin/nohup java -Xms32m -Xmx32m -Djava.net.preferIPv4Stack=true -jar /opt/sonarqube/lib/sonar-application-9.6.1.59531.jar
+ StandardOutput=syslog
+ LimitNOFILE=131072
+ LimitNPROC=8192
+ TimeoutStartSec=5
+ Restart=always
+ SuccessExitStatus=143
+ [Install]
+ WantedBy=multi-user.target
+ EOL
+
+Reload service daemon
+        $  systemctl daemon-reload
+Set memory size for Elastic search
+        $  echo 'vm.max_map_count=262144' >> /etc/sysctl.conf
+To verify if this was done, run below command. memory size should be 262144
+        $ sysctl -p
+Enable SonarQube
+        $ systemctl enable --now sonarqube
+Check SonarQube status
+        $ systemctl status sonarqube.service
+SonarQube should be Active and Running
+
+Access SonarQube Web Interface
+Access SonarQube in a web browser at your server's IP address on port 9000. For example:
+
+http://IP:9000
+Log in with username admin and password admin. SonarQube will prompt you to change your password.
