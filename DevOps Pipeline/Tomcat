@@ -17,8 +17,9 @@ Download latest version of Tomcat
 
 Unzip tar file
      $sudo tar -xvf apache-tomcat-9.0.65.tar.gz
+Optional- rename apache-tomcat-9.0.65. to Tomcat
 
---> move to conf directory and change port in tomcat server to another port from default port 
+--> Change directory to Tomcat and  move to conf directory and change port in tomcat server to another port from default port 
 (default port for Tomcat is 8080. This is also port for Jenkins. To run an effective pipeline, Update Tomcat default port to something else. In this case 8090)
      $vi server.xml
 scroll down to connector port and change port address: change from 8080 to 8090
