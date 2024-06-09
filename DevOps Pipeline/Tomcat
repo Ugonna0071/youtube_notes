@@ -4,7 +4,7 @@ Update server
     $sudo apt update
 Install latest version of java
 sudo apt install default-jdk
-Create user/ use Ubuntu user
+Create user or continue as Ubuntu user
     $useradd -s /bin/bash -d /home/mytomcatuser -m -G sudo mytomcatuser
 create password
 passwd "yourpassword"
