@@ -1,0 +1,49 @@
+##################----INSTALL TOMCAT----##################
+Set up server- Tomcat can run on T2 medium
+Update server 
+    $sudo apt update
+Install latest version of java
+sudo apt install default-jdk
+Create user/ use Ubuntu user
+    $useradd -s /bin/bash -d /home/mytomcatuser -m -G sudo mytomcatuser
+create password
+passwd "yourpassword"
+Switch to Tomcat user
+    $su - mytomcatuser
+Download latest version of Tomcat
+    $sudo wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.65/bin/apache-tomcat-9.0.65.tar.gz   OR
+    $sudo wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.80/bin/apache-tomcat-9.0.80.tar.gz (Another link )
+
+Unzip tar file
+     $sudo tar -xvf apache-tomcat-9.0.65.tar.gz
+
+--> move to conf directory and change port in tomcat server to another port from default port 
+(default port for Tomcat is 8080. This is also port for Jenkins. To run an effective pipeline, Update Tomcat default port to something else. In this case 8090)
+     $vi server.xml
+scroll down to connector port and change port address: change from 8080 to 8090
+input public IP of your instance plus port no on the web. This should display Tomcat web browser
+
+Update tomcat users xml file for manager app login.
+     $vi tomcat-users.xml
+Update roles
+ <role rolename="manager-gui"/>
+  <role rolename="manager-script"/>
+  <role rolename="admin-gui"/>
+  <role rolename="admin-script"/>
+ <role rolename="admin-manager"/>
+  <user username="yourtomcatuser" password="your password" roles="manager-gui,manager-script,admin-gui,admin-script,admin-manager"/>
+save
+:wq!
+cd to webapps and update hostmanager and manager files
+vi host-manager/META-INF/context.xml
+scroll to  allow="127\.\d+\.\d+\.\d+|::1|0:0:0:0:0:0:0:1|.*" />   only add |,*
+   $ vi manager/META-INF/context.xml
+do same as above and save
+change directory back to Tomcat
+   $cd ..
+create a symbolic links for direct start and stop of tomcat
+   $ sudo ln -s /home/yourtomcatuser/Tomcat/bin/shutdown.sh/usr/local/bin/stopTomcat
+   $sudo ln -s /home/yourtomcatuser/Tomcat/bin/startup.sh/usr/local/bin/startTomcat
+   $startTomcat
+   $stopTomcat
+
